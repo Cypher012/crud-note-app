@@ -4,11 +4,11 @@ import { NextRequest } from 'next/server';
 
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const note = await prisma.note.findUnique({
-      where: { id: context.params.id },
+      where: { id: (await params).id },
     });
     if (!note) return errorResponse('Note not found', HTTP_STATUS.NOT_FOUND);
     return successResponse(note, HTTP_STATUS.OK);
@@ -23,11 +23,11 @@ export async function GET(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await prisma.note.delete({
-      where: { id: context.params.id },
+      where: { id: (await params).id },
     });
     return successResponse(null, HTTP_STATUS.NO_CONTENT);
   } catch (error: unknown) {
@@ -41,12 +41,12 @@ export async function DELETE(
 
 export async function PUT(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json();
     const note = await prisma.note.update({
-      where: { id: context.params.id },
+      where: { id: (await params).id },
       data: {
         title: body.title,
         content: body.content,
