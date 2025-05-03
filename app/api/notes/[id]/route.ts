@@ -1,48 +1,63 @@
 import { prisma } from '@/lib/prisma';
 import { errorResponse, successResponse, HTTP_STATUS } from '../../utils';
+import { NextRequest } from 'next/server';
 
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: { id: string } }
 ) {
-  const note = await prisma.note.findUnique({
-    where: { id: params.id },
-  });
-  if (!note) return errorResponse('Note not found', HTTP_STATUS.NOT_FOUND);
-  return successResponse(note, HTTP_STATUS.OK);
+  try {
+    const note = await prisma.note.findUnique({
+      where: { id: context.params.id },
+    });
+    if (!note) return errorResponse('Note not found', HTTP_STATUS.NOT_FOUND);
+    return successResponse(note, HTTP_STATUS.OK);
+  } catch (error: unknown) {
+    console.error('Error fetching note:', error);
+    return errorResponse(
+      'Error fetching note',
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    );
+  }
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: { id: string } }
 ) {
-  //   check if note exist
-  const note = await prisma.note.findUnique({
-    where: { id: params.id },
-  });
-  if (!note) return errorResponse('Note not found', HTTP_STATUS.NOT_FOUND);
-  await prisma.note.delete({
-    where: { id: params.id },
-  });
-  return successResponse(
-    { message: 'Note deleted successfully' },
-    HTTP_STATUS.NO_CONTENT
-  );
+  try {
+    await prisma.note.delete({
+      where: { id: context.params.id },
+    });
+    return successResponse(null, HTTP_STATUS.NO_CONTENT);
+  } catch (error: unknown) {
+    console.error('Error deleting note:', error);
+    return errorResponse(
+      'Error deleting note',
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    );
+  }
 }
 
 export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: { id: string } }
 ) {
-  const { title, content } = await request.json();
-  // const
-  const note = await prisma.note.findUnique({
-    where: { id: params.id },
-  });
-  if (!note) return errorResponse('Note not found', HTTP_STATUS.NOT_FOUND);
-  const updatedNote = await prisma.note.update({
-    where: { id: params.id },
-    data: { title, content },
-  });
-  return successResponse(updatedNote, HTTP_STATUS.OK);
+  try {
+    const body = await request.json();
+    const note = await prisma.note.update({
+      where: { id: context.params.id },
+      data: {
+        title: body.title,
+        content: body.content,
+      },
+    });
+    return successResponse(note, HTTP_STATUS.OK);
+  } catch (error: unknown) {
+    console.error('Error updating note:', error);
+    return errorResponse(
+      'Error updating note',
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    );
+  }
 }
